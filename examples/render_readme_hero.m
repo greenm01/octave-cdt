@@ -1,7 +1,7 @@
 function render_readme_hero (out_path)
   if (nargin < 1)
     root = fileparts (mfilename ("fullpath"));
-    out_path = fullfile (root, "..", "docs", "assets", "dude-cdt.png");
+    out_path = fullfile (root, "..", "docs", "assets", "dude-cdt-holes.png");
   endif
 
   root = fileparts (mfilename ("fullpath"));
@@ -17,9 +17,9 @@ function render_readme_hero (out_path)
 
   figure (1, "visible", "off");
   clf;
-  fill_holes (display_polygon, [1.0 0.35 0.35]);
-  hold on;
   cdt_plot (tri, vertices, "color", [0.58 0.68 0.95]);
+  hold on;
+  fill_holes (display_polygon, [1.0 0.08 0.08]);
 
   for i = 1:rows (boundary_edges)
     edge = boundary_edges(i, :);
