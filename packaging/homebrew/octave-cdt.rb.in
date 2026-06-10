@@ -1,0 +1,71 @@
+class OctaveCdt < Formula
+  desc "Constrained Delaunay triangulation for GNU Octave"
+  homepage "https://github.com/REPLACE_WITH_OWNER/octave-cdt"
+  url "https://github.com/REPLACE_WITH_OWNER/octave-cdt/archive/refs/tags/v0.1.0.tar.gz"
+  sha256 "REPLACE_WITH_OCTAVE_CDT_SHA256"
+  license "BSD-3-Clause"
+  head "https://github.com/REPLACE_WITH_OWNER/octave-cdt.git", branch: "main"
+
+  depends_on "nim" => :build
+  depends_on "octave"
+
+  resource "p2t" do
+    url "https://github.com/REPLACE_WITH_OWNER/p2t/archive/refs/tags/v0.1.0.tar.gz"
+    sha256 "REPLACE_WITH_P2T_SHA256"
+  end
+
+  def install
+    resource("p2t").stage buildpath/"p2t"
+
+    p2t_lib =
+      if OS.mac?
+        lib/"libp2t.dylib"
+      else
+        lib/"libp2t.so"
+      end
+
+    cd buildpath/"p2t" do
+      system "nim", "c",
+        "--app:lib",
+        "--mm:arc",
+        "-d:release",
+        "--opt:speed",
+        "-d:p2tUnsafeCdt",
+        "-d:p2tFastRawCdt",
+        "--out:#{p2t_lib}",
+        "src/p2t/capi"
+    end
+
+    p2t_ldflags =
+      if OS.mac?
+        "-L#{lib} -lp2t -Wl,-rpath,#{lib}"
+      else
+        "-L#{lib} -lp2t -Wl,-rpath,#{lib}"
+      end
+
+    system "make",
+      "P2T_DIR=#{buildpath/"p2t"}",
+      "P2T_LIB=#{p2t_lib}",
+      "P2T_LDFLAGS=#{p2t_ldflags}"
+
+    system "make", "install", "PREFIX=#{prefix}"
+  end
+
+  def caveats
+    <<~EOS
+      Load octave-cdt paths in Octave with:
+
+        source("#{opt_share}/octave-cdt/cdt_setup.m")
+
+      To load it automatically, add that line to ~/.octaverc.
+    EOS
+  end
+
+  test do
+    octave = Formula["octave"].opt_bin/"octave"
+    system octave, "--quiet",
+      "--eval",
+      "source('#{opt_share}/octave-cdt/cdt_setup.m'); [tri, v] = cdt([0 0; 1 0; 1 1; 0 1]); assert(rows(tri) == 2); assert(rows(v) == 4);"
+  end
+end
+

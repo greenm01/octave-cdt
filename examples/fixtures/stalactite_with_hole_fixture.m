@@ -1,0 +1,18 @@
+function polygon = stalactite_with_hole_fixture ()
+  polygon = [
+    450 2250
+    450 1750
+    400 1700
+    350 1650
+    350 500
+    1050 1700
+    NaN NaN
+    980 1636
+    950 1600
+    650 1230
+    625 1247
+    600 1250
+    591 1350
+    550 2050
+  ];
+endfunction

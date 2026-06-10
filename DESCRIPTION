@@ -1,0 +1,10 @@
+Name: cdt
+Version: 0.1.0
+Date: 2026-06-10
+Author: Mason Austin Green
+Maintainer: Mason Austin Green
+Title: Constrained Delaunay Triangulation for GNU Octave
+Description: Polygon-oriented constrained Delaunay triangulation bindings for GNU Octave using the p2t C ABI.
+Categories: Geometry
+Depends: octave (>= 8.0.0)
+License: BSD-3-Clause

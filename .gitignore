@@ -1,0 +1,7 @@
+*.o
+*.oct
+*.mex
+*.dSYM/
+*.tar.gz
+*~
+
