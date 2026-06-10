@@ -57,7 +57,8 @@ Boundary edges are available when you ask for a third output:
 
 ## Build
 
-Build the [`p2t`](https://github.com/greenm01/p2t) C ABI first:
+You need Octave, `mkoctfile`, Nim, and a C/C++ toolchain. Build the
+[`p2t`](https://github.com/greenm01/p2t) C ABI first:
 
 ```sh
 cd ../p2t
@@ -77,12 +78,24 @@ If `p2t` is somewhere else:
 make P2T_DIR=/path/to/p2t
 ```
 
-The default build expects the `p2t` shared library at `/tmp/libp2t.dylib` on
-macOS or `/tmp/libp2t.so` on Linux, matching the current `p2t` nimble task.
+By default, the Makefile looks for the shared `p2t` library produced by the
+current `p2t` nimble task:
+
+- macOS: `/tmp/libp2t.dylib`
+- Linux: `/tmp/libp2t.so`
+- Windows: `/tmp/p2t.dll`
+
+If your library is somewhere else, pass `P2T_LIB` and `P2T_LDFLAGS` explicitly:
+
+```sh
+make P2T_DIR=/path/to/p2t \
+     P2T_LIB=/path/to/libp2t.so \
+     P2T_LDFLAGS="-L/path/to -lp2t"
+```
 
 ## Install
 
-For a local install:
+For a local Unix-style install:
 
 ```sh
 make install PREFIX=$HOME/.local
@@ -94,20 +107,16 @@ Then load the package paths from Octave:
 source (fullfile (getenv ("HOME"), ".local", "share", "octave-cdt", "cdt_setup.m"));
 ```
 
-The Homebrew formula template is in
-[packaging/homebrew/octave-cdt.rb.in](packaging/homebrew/octave-cdt.rb.in).
-After tagged releases exist for both `octave-cdt` and `p2t`, fill in the source
-URLs and SHA256 values and publish it in a tap:
+On Windows, install to any directory you control and source the generated
+`cdt_setup.m` from Octave:
 
-```sh
-brew install octave-cdt
+```octave
+source ("C:/path/to/octave-cdt/cdt_setup.m");
 ```
 
-Users can then add this to `~/.octaverc`:
-
-```sh
-echo "source (\"$(brew --prefix octave-cdt)/share/octave-cdt/cdt_setup.m\");" >> ~/.octaverc
-```
+Packaging notes for Homebrew are in
+[packaging/homebrew](packaging/homebrew). Homebrew is only one distribution
+path; it is not required by the library itself.
 
 ## Test
 

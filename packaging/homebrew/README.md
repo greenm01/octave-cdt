@@ -16,12 +16,8 @@ brew test octave-cdt
 ```
 
 The formula installs the package under `share/octave-cdt` and writes a
-`cdt_setup.m` file. Users load the package in Octave with:
+`cdt_setup.m` file. Users can add it to `~/.octaverc` with:
 
-```octave
-source ("/opt/homebrew/opt/octave-cdt/share/octave-cdt/cdt_setup.m");
+```sh
+echo "source (\"$(brew --prefix octave-cdt)/share/octave-cdt/cdt_setup.m\");" >> ~/.octaverc
 ```
-
-On Intel Homebrew installs, the prefix is usually `/usr/local` rather than
-`/opt/homebrew`.
-
