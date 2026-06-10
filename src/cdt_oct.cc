@@ -42,6 +42,24 @@ namespace
     return points;
   }
 
+  std::vector<p2t_edge> to_edges (const Matrix& m)
+  {
+    if (m.columns () != 2)
+      error ("constraints must have exactly two columns");
+
+    std::vector<p2t_edge> edges;
+    edges.reserve (m.rows ());
+
+    for (octave_idx_type i = 0; i < m.rows (); i++)
+      {
+        int32_t a = static_cast<int32_t> (m(i, 0)) - 1;
+        int32_t b = static_cast<int32_t> (m(i, 1)) - 1;
+        edges.push_back (p2t_edge { a, b });
+      }
+
+    return edges;
+  }
+
   bool bool_arg (const octave_value& value, const char *name)
   {
     if (! value.islogical () && ! value.isnumeric ())
@@ -200,3 +218,42 @@ DEFUN_DLD (cdt_oct, args, nargout,
   return out;
 }
 
+
+DEFUN_DLD (cdt_pointset_oct, args, nargout,
+           "[tri, vertices] = cdt_pointset_oct (points, constraints)")
+{
+  if (args.length () < 1 || args.length () > 2)
+    print_usage ();
+
+  Matrix point_matrix = require_points_matrix (args(0), "points");
+  std::vector<p2t_vec2> points = to_points (point_matrix);
+
+  Matrix constraint_matrix;
+  if (args.length () == 2 && ! args(1).isempty ())
+    constraint_matrix = args(1).xmatrix_value ("constraints must be a real numeric matrix");
+  else
+    constraint_matrix = Matrix (0, 2);
+
+  std::vector<p2t_edge> constraints = to_edges (constraint_matrix);
+
+  ContextPtr ctx (p2t_create ());
+  if (! ctx)
+    error ("p2t_create failed");
+
+  p2t_options options = p2t_default_options ();
+  p2t_result result = p2t_triangulate_points (
+    ctx.get (), points.empty () ? nullptr : points.data (),
+    static_cast<int32_t> (points.size ()),
+    constraints.empty () ? nullptr : constraints.data (),
+    static_cast<int32_t> (constraints.size ()), &options);
+
+  check_result (result);
+
+  octave_value_list out;
+  out(0) = triangles_to_matrix (result);
+
+  if (nargout >= 2)
+    out(1) = vertices_to_matrix (result);
+
+  return out;
+}

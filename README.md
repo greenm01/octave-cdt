@@ -57,6 +57,22 @@ Boundary edges are available when you ask for a third output:
                                       struct ("keep_boundary_edges", true));
 ```
 
+ADMESH-style domain masks are available through `cdt_points_in_domain`, which
+accepts the same `PTS.Poly(k).x` / `PTS.Poly(k).y` structure used by ADMESH's
+`PointsInDomain.m` helper:
+
+```octave
+PTS.Poly(1).x = [0; 4; 4; 0; 0];
+PTS.Poly(1).y = [0; 0; 4; 4; 0];
+PTS.Poly(2).x = [1; 1; 2; 2; 1];
+PTS.Poly(2).y = [1; 2; 2; 1; 1];
+IN = cdt_points_in_domain ([0.5; 1.5], [0.5; 1.5], PTS);
+```
+
+A thin `PointsInDomain` wrapper is also installed for ADMESH compatibility. Put
+`octave-cdt/inst` before ADMESH's `12_In_Polygon` directory on Octave's path to
+shadow ADMESH's MATLAB-only implementation without editing ADMESH itself.
+
 ## Build
 
 You need Octave, `mkoctfile`, Nim, and a C/C++ toolchain. Build the

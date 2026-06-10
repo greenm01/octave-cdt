@@ -55,4 +55,37 @@ assert (rows (tri) > 0);
 assert (all (tri(:) >= 1));
 assert (all (tri(:) <= rows (vertices)));
 
+
+PTS.Poly(1).x = [0; 4; 4; 0; 0];
+PTS.Poly(1).y = [0; 0; 4; 4; 0];
+PTS.Poly(2).x = [1; 1; 2; 2; 1];
+PTS.Poly(2).y = [1; 2; 2; 1; 1];
+X = [0.5; 1.5; 3.0; 5.0];
+Y = [0.5; 1.5; 3.0; 0.5];
+IN = cdt_points_in_domain (X, Y, PTS);
+assert (isequal (IN, logical ([1; 0; 1; 0])));
+
+IN2 = PointsInDomain (X, Y, PTS);
+assert (isequal (IN2, IN));
+
+points = [0 0; 10 0; 10 10; 0 10; 5 4];
+constraints = [1 2; 2 3; 3 4; 4 1];
+[tri_ps, vertices_ps] = cdt_pointset_oct (points, constraints);
+assert (isequal (vertices_ps, points));
+assert (columns (tri_ps), 3);
+assert (rows (tri_ps) > 0);
+
+dt = delaunayTriangulation (points, constraints);
+assert (isequal (dt.Points, points));
+assert (columns (dt.ConnectivityList), 3);
+assert (isequal (dt(:, 1), dt.ConnectivityList(:, 1)));
+assert (all (isInterior (dt)));
+ti = pointLocation (dt, [5 5; 20 20]);
+assert (! isnan (ti(1)));
+assert (isnan (ti(2)));
+
+dt2 = delaunayTriangulation (points);
+assert (columns (dt2.ConnectivityList), 3);
+assert (isequal (dt2(:, 2), dt2.ConnectivityList(:, 2)));
+
 disp ("octave-cdt smoke tests passed");

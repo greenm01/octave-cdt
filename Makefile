@@ -14,13 +14,13 @@ endif
 OCT ?= octave
 MKOCTFILE ?= mkoctfile
 
-OCT_OUT := inst/cdt_oct.oct
+OCT_OUT := inst/cdt_oct.oct inst/cdt_pointset_oct.oct
 
 .PHONY: all clean install test
 
 all: $(OCT_OUT)
 
-$(OCT_OUT): src/cdt_oct.cc $(P2T_DIR)/include/p2t.h $(P2T_LIB)
+inst/cdt_oct.oct inst/cdt_pointset_oct.oct: src/cdt_oct.cc $(P2T_DIR)/include/p2t.h $(P2T_LIB)
 	$(MKOCTFILE) -I$(P2T_DIR)/include src/cdt_oct.cc $(P2T_LDFLAGS) -o $@
 
 test: all

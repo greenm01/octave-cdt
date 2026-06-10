@@ -1,3 +1,9 @@
 cdt >> Constrained Delaunay Triangulation
  cdt
 
+ cdt_points_in_domain
+ PointsInDomain
+ cdt_pointset_oct
+ delaunayTriangulation
+ isInterior
+ pointLocation
