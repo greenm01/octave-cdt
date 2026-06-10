@@ -2,6 +2,8 @@
 
 Constrained Delaunay Triangulation (CDT) for GNU Octave.
 
+![Dude with holes CDT example](docs/assets/dude-cdt.png)
+
 `octave-cdt` gives Octave a small polygon-oriented `cdt` function backed by
 [`p2t`](https://github.com/greenm01/p2t)'s native CDT engine. The expensive
 triangulation work runs in compiled code; Octave handles ordinary matrices in
