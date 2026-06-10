@@ -1,35 +1,58 @@
 # octave-cdt
 
-GNU Octave bindings for `p2t`, a 2D constrained Delaunay tessellator.
+Constrained Delaunay Triangulation (CDT) for GNU Octave.
 
-This package exposes a polygon-oriented CDT function:
+`octave-cdt` gives Octave a small polygon-oriented `cdt` function backed by
+`p2t`'s native CDT engine. The expensive triangulation work runs in compiled
+code; Octave handles ordinary matrices in and ordinary matrices out.
 
 ```octave
 outer = [0 0; 1 0; 1 1; 0 1];
 [tri, vertices] = cdt (outer);
-triplot (tri, vertices(:,1), vertices(:,2));
+triplot (tri, vertices(:, 1), vertices(:, 2));
+axis equal;
 ```
 
-Holes and Steiner points are optional:
+Contours are closed for you. Do not repeat the first point at the end. Returned
+triangle and edge indices are 1-based, as Octave users expect.
+
+## Input
+
+Pass the outer contour as an `N x 2` matrix:
 
 ```octave
 outer = [0 0; 4 0; 4 4; 0 4];
-hole = [1 1; 1 2; 2 2; 2 1];
-steiner = [3 3];
-[tri, vertices, boundary_edges] = cdt (outer, {hole}, steiner,
-                                      struct ("keep_boundary_edges", true));
+[tri, vertices] = cdt (outer);
 ```
 
-Octave-style NaN-separated polygon matrices are also accepted. The first ring is
-the outer contour; later rings are holes:
+Add holes with a cell array:
+
+```octave
+hole = [1 1; 1 2; 2 2; 2 1];
+[tri, vertices] = cdt (outer, {hole});
+```
+
+Or use the common Octave convention of `NaN NaN` rows to separate rings. The
+first ring is the outer boundary; later rings are holes.
 
 ```octave
 polygon = [outer; NaN NaN; hole];
 [tri, vertices] = cdt (polygon);
 ```
 
-Contours are closed by the library. Do not repeat the first point at the end.
-Triangle and edge indices returned to Octave are 1-based.
+Steiner points are optional:
+
+```octave
+steiner = [3 3];
+[tri, vertices] = cdt (outer, {hole}, steiner);
+```
+
+Boundary edges are available when you ask for a third output:
+
+```octave
+[tri, vertices, boundary_edges] = cdt (outer, {hole}, [], ...
+                                      struct ("keep_boundary_edges", true));
+```
 
 ## Build
 
@@ -47,14 +70,14 @@ cd ../octave-cdt
 make
 ```
 
-If `p2t` is not next to this checkout, set `P2T_DIR`:
+If `p2t` is somewhere else:
 
 ```sh
 make P2T_DIR=/path/to/p2t
 ```
 
-The build expects the C ABI library at `/tmp/libp2t.dylib` on macOS or
-`/tmp/libp2t.so` on Linux, matching the current `p2t` nimble task.
+The default build expects the `p2t` shared library at `/tmp/libp2t.dylib` on
+macOS or `/tmp/libp2t.so` on Linux, matching the current `p2t` nimble task.
 
 ## Install
 
@@ -70,22 +93,22 @@ Then load the package paths from Octave:
 source (fullfile (getenv ("HOME"), ".local", "share", "octave-cdt", "cdt_setup.m"));
 ```
 
-For Homebrew distribution, use [packaging/homebrew/octave-cdt.rb.in](packaging/homebrew/octave-cdt.rb.in)
-as the tap formula template. After publishing tagged tarballs for `octave-cdt`
-and `p2t`, replace the template URLs and SHA256 values, then install from the
-tap with:
+The Homebrew formula template is in
+[packaging/homebrew/octave-cdt.rb.in](packaging/homebrew/octave-cdt.rb.in).
+After tagged releases exist for both `octave-cdt` and `p2t`, fill in the source
+URLs and SHA256 values and publish it in a tap:
 
 ```sh
 brew install octave-cdt
 ```
 
-The formula installs `cdt_setup.m`; users can add this to `~/.octaverc`:
+Users can then add this to `~/.octaverc`:
 
 ```sh
 echo "source (\"$(brew --prefix octave-cdt)/share/octave-cdt/cdt_setup.m\");" >> ~/.octaverc
 ```
 
-## Smoke Test
+## Test
 
 ```sh
 make test
@@ -99,6 +122,9 @@ octave --path inst --path examples --path examples/fixtures --eval "demo_polygon
 octave --path inst --path examples --path examples/fixtures --eval "check_fixtures"
 ```
 
+`demo_star` and `demo_polygon_with_hole` draw the triangulation. `check_fixtures`
+runs the included fixtures without opening a graphics window.
+
 ## API
 
 ```octave
@@ -108,12 +134,16 @@ octave --path inst --path examples --path examples/fixtures --eval "check_fixtur
 [tri, vertices, boundary_edges] = cdt (outer, holes, steiner, options)
 ```
 
-- `outer`: `N x 2` numeric matrix.
-- `outer`: may also be a NaN-separated `N x 2` numeric matrix containing the outer ring followed by holes.
-- `holes`: cell array of `N x 2` numeric matrices, one `N x 2` matrix, a NaN-separated `N x 2` matrix, or `{}`.
-- `steiner`: `N x 2` numeric matrix, or `[]`.
-- `options.epsilon`: geometric tolerance, default `1e-9`.
-- `options.clean_input`: remove adjacent duplicates, closing duplicate, and collinear contour points, default `true`.
-- `options.validate`: validate input contours, default `true`.
-- `options.keep_boundary_edges`: return boundary edges, default `nargout >= 3`.
-- `options.mode`: `"checked"`, `"trusted"`, or `"normalized_trusted"`, default `"checked"`.
+Arguments:
+
+- `outer`: an `N x 2` numeric matrix, or a NaN-separated `N x 2` matrix whose first ring is the outer contour and whose later rings are holes.
+- `holes`: a cell array of `N x 2` matrices, one `N x 2` matrix, a NaN-separated `N x 2` matrix, or `{}`.
+- `steiner`: an `N x 2` numeric matrix, or `[]`.
+
+Options:
+
+- `epsilon`: geometric tolerance. Default: `1e-9`.
+- `clean_input`: remove adjacent duplicates, a repeated closing point, and collinear contour points. Default: `true`.
+- `validate`: validate contours before triangulation. Default: `true`.
+- `keep_boundary_edges`: return boundary edges. Default: `nargout >= 3`.
+- `mode`: `"checked"`, `"trusted"`, or `"normalized_trusted"`. Default: `"checked"`.
