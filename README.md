@@ -73,6 +73,19 @@ A thin `PointsInDomain` wrapper is also installed for ADMESH compatibility. Put
 `octave-cdt/inst` before ADMESH's `12_In_Polygon` directory on Octave's path to
 shadow ADMESH's MATLAB-only implementation without editing ADMESH itself.
 
+`octave-cdt` also includes a small ADMESH-oriented MATLAB compatibility surface
+for GNU Octave:
+
+- `delaunayTriangulation(p)` and `delaunayTriangulation(p, C)`
+- `pointLocation(dt, query)` and `isInterior(dt)`
+- `griddedInterpolant` and `scatteredInterpolant` for 2-D query patterns
+- `triangulation`, `freeBoundary`, `edgeAttachments`, and `edges`
+- `KDTreeSearcher` and `knnsearch` with Euclidean distance
+- `uiprogressdlg` as a headless no-op progress object
+
+These shims are intentionally scoped to the call patterns ADMESH uses. They are
+not complete MATLAB replacements.
+
 ## Build
 
 You need Octave, `mkoctfile`, Nim, and a C/C++ toolchain. Build the

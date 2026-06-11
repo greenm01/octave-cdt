@@ -7,3 +7,13 @@ cdt >> Constrained Delaunay Triangulation
  delaunayTriangulation
  isInterior
  pointLocation
+ griddedInterpolant
+ scatteredInterpolant
+ triangulation
+ freeBoundary
+ edgeAttachments
+ edges
+ knnsearch
+ KDTreeSearcher
+ uiprogressdlg
+ octaveCdtProgressDialog

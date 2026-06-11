@@ -88,4 +88,35 @@ dt2 = delaunayTriangulation (points);
 assert (columns (dt2.ConnectivityList), 3);
 assert (isequal (dt2(:, 2), dt2.ConnectivityList(:, 2)));
 
+
+F = griddedInterpolant ([0 1; 0 1], [0 0; 1 1], [0 1; 2 3]);
+assert (abs (F ([0.5 0.5]) - 1.5) < 1e-9);
+assert (abs (F (0.5, 0.5) - 1.5) < 1e-9);
+
+Fs = scatteredInterpolant ([0; 1; 0], [0; 0; 1], [0; 1; 2]);
+assert (abs (Fs (0, 0) - 0) < 1e-9);
+
+[idx, D] = knnsearch ([0 0; 2 0; 0 2], [0.1 0.1], "k", 2);
+assert (isequal (idx, [1 2]));
+assert (columns (D), 2);
+searcher = KDTreeSearcher ([0 0; 2 0; 0 2], "distance", "euclidean");
+idx2 = knnsearch (searcher, [1.9 0.1]);
+assert (idx2 == 2);
+
+tr = triangulation ([1 2 3; 1 3 4], [0 0; 1 0; 1 1; 0 1]);
+assert (isequal (size (tr), [2 3]));
+fb = freeBoundary (tr);
+assert (rows (fb), 4);
+ea = edgeAttachments (tr, [1 3; 1 2]);
+assert (isequal (ea{1}, [1 2]));
+assert (isequal (ea{2}, 1));
+assert (columns (tr.circumcenter ()), 2);
+assert (columns (tr.neighbors ()), 3);
+
+
+dlg = uiprogressdlg ([], "Title", "ADMESH", "Message", "Testing", "Indeterminate", "on");
+assert (isa (dlg, "octaveCdtProgressDialog"));
+dlg.Value = 0.5;
+close (dlg);
+
 disp ("octave-cdt smoke tests passed");
