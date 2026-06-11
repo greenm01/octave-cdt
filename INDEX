@@ -17,3 +17,7 @@ cdt >> Constrained Delaunay Triangulation
  KDTreeSearcher
  uiprogressdlg
  octaveCdtProgressDialog
+ insidepoly
+ bwdist
+ struct2table
+ distFunSubroutine

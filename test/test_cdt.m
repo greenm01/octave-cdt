@@ -119,4 +119,17 @@ assert (isa (dlg, "octaveCdtProgressDialog"));
 dlg.Value = 0.5;
 close (dlg);
 
+
+assert (insidepoly (0.5, 0.5, [0; 1; 1; 0; 0], [0; 0; 1; 1; 0]));
+Dmask = bwdist ([false false false; false true false; false false false]);
+assert (Dmask(2, 2) == 0);
+assert (abs (Dmask(1, 1) - sqrt (2)) < 1e-12);
+srow(1).x = [1; 2]; srow(1).y = [3; 4]; srow(2).x = 5; srow(2).y = 6;
+tab = struct2table (srow, "AsArray", 1);
+assert (iscell (tab.x));
+assert (numel (tab.x) == 2);
+
+Sdist = distFunSubroutine ([0.5; 2], [0.5; 2], [0; 1; 1; 0; 0], [0; 0; 1; 1; 0], [1; 2]);
+assert (isfinite (Sdist(1)));
+
 disp ("octave-cdt smoke tests passed");
