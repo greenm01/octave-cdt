@@ -84,6 +84,13 @@ ti = pointLocation (dt, [5 5; 20 20]);
 assert (! isnan (ti(1)));
 assert (isnan (ti(2)));
 
+cycle_points = [0 0; 10 0; 10 10; 0 10; 5 5; 20 20];
+cycle_constraints = [1 2; 2 3; 3 4; 4 1];
+dt_cycle = delaunayTriangulation (cycle_points, cycle_constraints);
+assert (rows (dt_cycle.Points) == 5);
+assert (rows (dt_cycle.ConnectivityList) > 0);
+assert (max (dt_cycle.ConnectivityList(:)) <= rows (dt_cycle.Points));
+
 dt2 = delaunayTriangulation (points);
 assert (columns (dt2.ConnectivityList), 3);
 assert (isequal (dt2(:, 2), dt2.ConnectivityList(:, 2)));
@@ -132,5 +139,8 @@ assert (numel (tab.x) == 2);
 Sdist = distFunSubroutine ([0.5; 2], [0.5; 2], [0; 1; 1; 0; 0], [0; 0; 1; 1; 0], [1; 2]);
 assert (isfinite (Sdist(1)));
 assert (isequal (strfind ([1 0 1 0 1], [0 1]), [2 4]));
+[sx, sy] = SpacePolyPoints ([0; 10], [0; 0], [0; 10], [0; 5; 10]);
+assert (isequal (sx, [0; 5; 10]));
+assert (isequal (sy, [0; 0; 0]));
 
 disp ("octave-cdt smoke tests passed");

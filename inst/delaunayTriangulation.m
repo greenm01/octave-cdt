@@ -26,9 +26,15 @@ classdef delaunayTriangulation
         [clean_points, index_map] = normalize_points (points);
         clean_constraints = normalize_constraints (constraints, index_map);
         obj.Constraints = clean_constraints;
-        [tri, vertices] = cdt_pointset_oct (clean_points, clean_constraints);
-        obj.Points = vertices;
-        obj.ConnectivityList = tri;
+        [ok, tri, vertices] = triangulate_closed_cycles (clean_points, clean_constraints);
+        if (ok)
+          obj.Points = vertices;
+          obj.ConnectivityList = tri;
+        else
+          [tri, vertices] = cdt_pointset_oct (clean_points, clean_constraints);
+          obj.Points = vertices;
+          obj.ConnectivityList = tri;
+        endif
       endif
     endfunction
 
@@ -64,6 +70,184 @@ function [clean_points, index_map] = normalize_points (points)
       found = rows (clean_points);
     endif
     index_map(i) = found;
+  endfor
+endfunction
+
+function [ok, tri, vertices] = triangulate_closed_cycles (points, constraints)
+  ok = false;
+  tri = zeros (0, 3);
+  vertices = points;
+
+  if (isempty (constraints))
+    return;
+  endif
+
+  cycles = constraints_to_cycles (constraints, rows (points));
+  if (isempty (cycles))
+    return;
+  endif
+
+  used = false (rows (points), 1);
+  areas = zeros (numel (cycles), 1);
+  for i = 1:numel (cycles)
+    cycle = cycles{i};
+    used(cycle) = true;
+    areas(i) = signed_area (points(cycle, :));
+  endfor
+
+  [~, outer_pos] = max (abs (areas));
+  outer_idx = cycles{outer_pos};
+  if (signed_area (points(outer_idx, :)) < 0)
+    outer_idx = flipud (outer_idx(:));
+  else
+    outer_idx = outer_idx(:);
+  endif
+
+  holes = {};
+  for i = 1:numel (cycles)
+    if (i == outer_pos)
+      continue;
+    endif
+    hole_idx = cycles{i};
+    if (signed_area (points(hole_idx, :)) > 0)
+      hole_idx = flipud (hole_idx(:));
+    else
+      hole_idx = hole_idx(:);
+    endif
+    holes{end + 1} = points(hole_idx, :);
+  endfor
+
+  steiner_idx = find (! used);
+  steiner_idx = filter_steiner_in_domain (points, steiner_idx, outer_idx, cycles, outer_pos);
+  keep_idx = find (used);
+  keep_idx = [keep_idx(:); steiner_idx(:)];
+  keep_idx = sort (keep_idx);
+  vertices = points(keep_idx, :);
+
+  options = struct ("epsilon", 1e-9,
+                    "clean_input", false,
+                    "validate", false,
+                    "keep_boundary_edges", false,
+                    "mode", "checked");
+  try
+    [raw_tri, raw_vertices] = cdt (points(outer_idx, :), holes,
+                                   points(steiner_idx, :), options);
+  catch
+    return;
+  end_try_catch
+
+  map = map_vertices_to_points (raw_vertices, points);
+  if (any (map == 0))
+    return;
+  endif
+
+  local_map = zeros (rows (points), 1);
+  local_map(keep_idx) = (1:numel (keep_idx))';
+  tri = local_map(map(raw_tri));
+  if (any (tri(:) == 0))
+    return;
+  endif
+  ok = true;
+endfunction
+
+function keep = filter_steiner_in_domain (points, steiner_idx, outer_idx, cycles, outer_pos)
+  if (isempty (steiner_idx))
+    keep = steiner_idx;
+    return;
+  endif
+
+  query = points(steiner_idx, :);
+  outer = points(outer_idx, :);
+  [in, on] = inpolygon (query(:, 1), query(:, 2), outer(:, 1), outer(:, 2));
+  mask = in | on;
+
+  for i = 1:numel (cycles)
+    if (i == outer_pos)
+      continue;
+    endif
+    hole = points(cycles{i}, :);
+    [in_hole, on_hole] = inpolygon (query(:, 1), query(:, 2), hole(:, 1), hole(:, 2));
+    mask = mask & ! (in_hole | on_hole);
+  endfor
+
+  keep = steiner_idx(mask);
+endfunction
+
+function cycles = constraints_to_cycles (constraints, point_count)
+  cycles = {};
+  degree = zeros (point_count, 1);
+  adj = cell (point_count, 1);
+
+  for i = 1:rows (constraints)
+    a = constraints(i, 1);
+    b = constraints(i, 2);
+    if (a < 1 || b < 1 || a > point_count || b > point_count || a == b)
+      cycles = {};
+      return;
+    endif
+    degree(a) += 1;
+    degree(b) += 1;
+    adj{a}(end + 1) = b;
+    adj{b}(end + 1) = a;
+  endfor
+
+  touched = find (degree > 0);
+  if (any (degree(touched) != 2))
+    cycles = {};
+    return;
+  endif
+
+  visited = false (point_count, 1);
+  for start = touched(:)'
+    if (visited(start))
+      continue;
+    endif
+
+    cycle = [];
+    prev = 0;
+    cur = start;
+    while (true)
+      if (visited(cur))
+        if (cur == start && numel (cycle) >= 3)
+          break;
+        endif
+        cycles = {};
+        return;
+      endif
+
+      visited(cur) = true;
+      cycle(end + 1, 1) = cur;
+      nexts = adj{cur};
+      if (nexts(1) == prev)
+        next = nexts(2);
+      else
+        next = nexts(1);
+      endif
+      prev = cur;
+      cur = next;
+    endwhile
+
+    cycles{end + 1} = cycle;
+  endfor
+endfunction
+
+function area = signed_area (ring)
+  x = ring(:, 1);
+  y = ring(:, 2);
+  x2 = [x(2:end); x(1)];
+  y2 = [y(2:end); y(1)];
+  area = 0.5 * sum (x .* y2 - x2 .* y);
+endfunction
+
+function map = map_vertices_to_points (vertices, points)
+  map = zeros (rows (vertices), 1);
+  for i = 1:rows (vertices)
+    for j = 1:rows (points)
+      if (all (abs (vertices(i, :) - points(j, :)) <= 1e-8))
+        map(i) = j;
+        break;
+      endif
+    endfor
   endfor
 endfunction
 
