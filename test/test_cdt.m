@@ -131,5 +131,6 @@ assert (numel (tab.x) == 2);
 
 Sdist = distFunSubroutine ([0.5; 2], [0.5; 2], [0; 1; 1; 0; 0], [0; 0; 1; 1; 0], [1; 2]);
 assert (isfinite (Sdist(1)));
+assert (isequal (strfind ([1 0 1 0 1], [0 1]), [2 4]));
 
 disp ("octave-cdt smoke tests passed");

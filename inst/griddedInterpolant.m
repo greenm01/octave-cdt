@@ -51,14 +51,21 @@ endclassdef
 
 function out = eval_grid (obj, Xq, Yq)
   method = lower (obj.Method);
-  if (strcmp (method, "linear") || strcmp (method, "nearest"))
-    out = interp2 (obj.X, obj.Y, obj.V, Xq, Yq, method);
-  else
+  if (! (strcmp (method, "linear") || strcmp (method, "nearest")))
     error (["griddedInterpolant: unsupported method " method]);
   endif
 
-  if (any (isnan (out(:))) && strcmpi (obj.ExtrapolationMethod, "nearest"))
-    nearest = interp2 (obj.X, obj.Y, obj.V, Xq, Yq, "nearest");
-    out(isnan (out)) = nearest(isnan (out));
+  if (numel (obj.X) == numel (obj.V) && numel (obj.Y) == numel (obj.V))
+    out = griddata (obj.X(:), obj.Y(:), obj.V(:), Xq, Yq, method);
+    if (any (isnan (out(:))) && strcmpi (obj.ExtrapolationMethod, "nearest"))
+      nearest = griddata (obj.X(:), obj.Y(:), obj.V(:), Xq, Yq, "nearest");
+      out(isnan (out)) = nearest(isnan (out));
+    endif
+  else
+    out = interp2 (obj.X, obj.Y, obj.V, Xq, Yq, method);
+    if (any (isnan (out(:))) && strcmpi (obj.ExtrapolationMethod, "nearest"))
+      nearest = interp2 (obj.X, obj.Y, obj.V, Xq, Yq, "nearest");
+      out(isnan (out)) = nearest(isnan (out));
+    endif
   endif
 endfunction
