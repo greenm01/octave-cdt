@@ -42,10 +42,10 @@ namespace
     return points;
   }
 
-  std::vector<p2t_edge> to_edges (const Matrix& m)
+  std::vector<p2t_edge> to_edges (const Matrix& m, const char *name)
   {
     if (m.columns () != 2)
-      error ("constraints must have exactly two columns");
+      error ("%s must have exactly two columns", name);
 
     std::vector<p2t_edge> edges;
     edges.reserve (m.rows ());
@@ -220,32 +220,54 @@ DEFUN_DLD (cdt_oct, args, nargout,
 
 
 DEFUN_DLD (cdt_pointset_oct, args, nargout,
-           "[tri, vertices] = cdt_pointset_oct (points, constraints)")
+           "[tri, vertices] = cdt_pointset_oct (points, boundary_segments, segments, holes, epsilon)")
 {
-  if (args.length () < 1 || args.length () > 2)
+  if (args.length () < 1 || args.length () > 5)
     print_usage ();
 
   Matrix point_matrix = require_points_matrix (args(0), "points");
   std::vector<p2t_vec2> points = to_points (point_matrix);
 
-  Matrix constraint_matrix;
-  if (args.length () == 2 && ! args(1).isempty ())
-    constraint_matrix = args(1).xmatrix_value ("constraints must be a real numeric matrix");
+  Matrix boundary_matrix;
+  if (args.length () >= 2 && ! args(1).isempty ())
+    boundary_matrix = args(1).xmatrix_value ("boundary_segments must be a real numeric matrix");
   else
-    constraint_matrix = Matrix (0, 2);
+    boundary_matrix = Matrix (0, 2);
 
-  std::vector<p2t_edge> constraints = to_edges (constraint_matrix);
+  Matrix segment_matrix;
+  if (args.length () >= 3 && ! args(2).isempty ())
+    segment_matrix = args(2).xmatrix_value ("segments must be a real numeric matrix");
+  else
+    segment_matrix = Matrix (0, 2);
+
+  Matrix hole_matrix;
+  if (args.length () >= 4 && ! args(3).isempty ())
+    hole_matrix = require_points_matrix (args(3), "holes");
+  else
+    hole_matrix = Matrix (0, 2);
+
+  double epsilon = 1e-9;
+  if (args.length () >= 5 && ! args(4).isempty ())
+    epsilon = args(4).xdouble_value ("epsilon must be a scalar");
+
+  std::vector<p2t_edge> boundary_segments
+    = to_edges (boundary_matrix, "boundary_segments");
+  std::vector<p2t_edge> segments = to_edges (segment_matrix, "segments");
+  std::vector<p2t_vec2> holes = to_points (hole_matrix);
 
   ContextPtr ctx (p2t_create ());
   if (! ctx)
     error ("p2t_create failed");
 
-  p2t_options options = p2t_default_options ();
-  p2t_result result = p2t_triangulate_points (
+  p2t_result result = p2t_tessellate_pslg (
     ctx.get (), points.empty () ? nullptr : points.data (),
     static_cast<int32_t> (points.size ()),
-    constraints.empty () ? nullptr : constraints.data (),
-    static_cast<int32_t> (constraints.size ()), &options);
+    boundary_segments.empty () ? nullptr : boundary_segments.data (),
+    static_cast<int32_t> (boundary_segments.size ()),
+    segments.empty () ? nullptr : segments.data (),
+    static_cast<int32_t> (segments.size ()),
+    holes.empty () ? nullptr : holes.data (),
+    static_cast<int32_t> (holes.size ()), epsilon);
 
   check_result (result);
 

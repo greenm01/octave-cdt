@@ -75,6 +75,42 @@ assert (isequal (vertices_ps, points));
 assert (columns (tri_ps), 3);
 assert (rows (tri_ps) > 0);
 
+pslg_points = [0 0; 4 0; 4 4; 0 4; 2 2];
+pslg_boundary = [1 2; 2 3; 3 4; 4 1];
+pslg_segments = [1 3];
+[tri_pslg, vertices_pslg] = cdt_pointset_oct (pslg_points, pslg_boundary,
+                                               pslg_segments);
+assert (isequal (vertices_pslg, pslg_points));
+assert (columns (tri_pslg), 3);
+assert (rows (tri_pslg) > 0);
+assert (abs (triangle_area_sum (tri_pslg, vertices_pslg) - 16) < 1e-9);
+
+hole_points = [
+  0 0
+  10 0
+  10 10
+  0 10
+  3 3
+  7 3
+  7 7
+  3 7
+];
+hole_boundary = [
+  1 2
+  2 3
+  3 4
+  4 1
+  5 6
+  6 7
+  7 8
+  8 5
+];
+[tri_hole_pslg, vertices_hole_pslg] = cdt_pointset_oct (hole_points,
+                                                        hole_boundary,
+                                                        [], [5 5]);
+assert (isequal (vertices_hole_pslg, hole_points));
+assert (abs (triangle_area_sum (tri_hole_pslg, vertices_hole_pslg) - 84) < 1e-9);
+
 dt = delaunayTriangulation (points, constraints);
 assert (isequal (dt.Points, points));
 assert (columns (dt.ConnectivityList), 3);
@@ -90,6 +126,11 @@ dt_cycle = delaunayTriangulation (cycle_points, cycle_constraints);
 assert (rows (dt_cycle.Points) == 5);
 assert (rows (dt_cycle.ConnectivityList) > 0);
 assert (max (dt_cycle.ConnectivityList(:)) <= rows (dt_cycle.Points));
+
+dt_open = delaunayTriangulation (pslg_points, pslg_segments);
+assert (isequal (dt_open.Points, pslg_points));
+assert (columns (dt_open.ConnectivityList), 3);
+assert (rows (dt_open.ConnectivityList) > 0);
 
 dt2 = delaunayTriangulation (points);
 assert (columns (dt2.ConnectivityList), 3);

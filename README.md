@@ -4,8 +4,10 @@ Constrained Delaunay Triangulation (CDT) for GNU Octave.
 
 ![Dude with holes CDT example](docs/assets/dude-cdt-holes.png)
 
-`octave-cdt` gives Octave a small polygon-oriented `cdt` function backed by
-[`p2t`](https://github.com/greenm01/p2t)'s native CDT engine. The expensive
+`octave-cdt` gives Octave a small `cdt` function backed by
+[`p2t`](https://github.com/greenm01/p2t)'s native CDT engine. It accepts polygon
+contours through the high-level `cdt` function and flat point/segment PSLGs
+through the low-level `cdt_pointset_oct` entry point. The expensive
 triangulation work runs in compiled code; Octave handles ordinary matrices in
 and ordinary matrices out.
 
@@ -55,6 +57,24 @@ Boundary edges are available when you ask for a third output:
 ```octave
 [tri, vertices, boundary_edges] = cdt (outer, {hole}, [], ...
                                       struct ("keep_boundary_edges", true));
+```
+
+Point/segment PSLG input is available through the lower-level compiled entry
+point. Segment indices are 1-based, matching ordinary Octave indexing:
+
+```octave
+points = [0 0; 4 0; 4 4; 0 4; 2 2];
+boundary = [1 2; 2 3; 3 4; 4 1];
+segments = [1 3];
+[tri, vertices] = cdt_pointset_oct (points, boundary, segments);
+```
+
+An inner constrained boundary loop can be paired with a hole marker:
+
+```octave
+points = [0 0; 10 0; 10 10; 0 10; 3 3; 7 3; 7 7; 3 7];
+boundary = [1 2; 2 3; 3 4; 4 1; 5 6; 6 7; 7 8; 8 5];
+[tri, vertices] = cdt_pointset_oct (points, boundary, [], [5 5]);
 ```
 
 ADMESH-style domain masks are available through `cdt_points_in_domain`, which
@@ -173,6 +193,9 @@ runs the included fixtures without opening a graphics window.
 [tri, vertices] = cdt (outer, holes)
 [tri, vertices] = cdt (outer, holes, steiner)
 [tri, vertices, boundary_edges] = cdt (outer, holes, steiner, options)
+[tri, vertices] = cdt_pointset_oct (points, boundary_segments)
+[tri, vertices] = cdt_pointset_oct (points, boundary_segments, segments)
+[tri, vertices] = cdt_pointset_oct (points, boundary_segments, segments, holes)
 ```
 
 Arguments:
@@ -180,6 +203,10 @@ Arguments:
 - `outer`: an `N x 2` numeric matrix, or a NaN-separated `N x 2` matrix whose first ring is the outer contour and whose later rings are holes.
 - `holes`: a cell array of `N x 2` matrices, one `N x 2` matrix, a NaN-separated `N x 2` matrix, or `{}`.
 - `steiner`: an `N x 2` numeric matrix, or `[]`.
+- `points`: an `N x 2` numeric matrix for point/segment PSLG input.
+- `boundary_segments`: an `M x 2` matrix of boundary segment indices into `points`.
+- `segments`: an optional `M x 2` matrix of interior constrained segment indices.
+- `holes`: an optional `N x 2` matrix of hole marker coordinates for PSLG input.
 
 Options:
 

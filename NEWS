@@ -4,4 +4,4 @@ Version 0.1.0
 -------------
 
 Initial Octave binding for p2t polygon CDT.
-
+Expose p2t's PSLG point/segment tessellation API through cdt_pointset_oct.

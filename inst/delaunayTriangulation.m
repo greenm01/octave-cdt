@@ -31,7 +31,11 @@ classdef delaunayTriangulation
           obj.Points = vertices;
           obj.ConnectivityList = tri;
         else
-          [tri, vertices] = cdt_pointset_oct (clean_points, clean_constraints);
+          boundary_constraints = convex_hull_constraints (clean_points);
+          interior_constraints = remove_boundary_constraints (clean_constraints,
+                                                              boundary_constraints);
+          [tri, vertices] = cdt_pointset_oct (clean_points, boundary_constraints,
+                                              interior_constraints);
           obj.Points = vertices;
           obj.ConnectivityList = tri;
         endif
@@ -257,10 +261,40 @@ function constraints = normalize_constraints (constraints, index_map)
     return;
   endif
 
-  constraints = index_map(constraints);
+  constraints = reshape (index_map(constraints), size (constraints));
   constraints = sort (constraints, 2);
   constraints(constraints(:, 1) == constraints(:, 2), :) = [];
   if (! isempty (constraints))
     constraints = unique (constraints, "rows");
   endif
+endfunction
+
+function constraints = convex_hull_constraints (points)
+  if (rows (points) < 3)
+    constraints = zeros (0, 2);
+    return;
+  endif
+
+  hull = convhull (points(:, 1), points(:, 2));
+  hull = hull(:);
+  if (! isempty (hull) && hull(end) == hull(1))
+    hull = hull(1:end - 1);
+  endif
+
+  if (numel (hull) < 3)
+    constraints = zeros (0, 2);
+    return;
+  endif
+
+  constraints = [hull, hull([2:end, 1])];
+endfunction
+
+function constraints = remove_boundary_constraints (constraints, boundary_constraints)
+  if (isempty (constraints) || isempty (boundary_constraints))
+    return;
+  endif
+
+  [on_boundary, ~] = ismember (sort (constraints, 2),
+                               sort (boundary_constraints, 2), "rows");
+  constraints = constraints(! on_boundary, :);
 endfunction
